@@ -7,7 +7,7 @@ resource "azurerm_resource_group" "app_grp" {
 
 # Example resource - This is a storage account
 resource "azurerm_storage_account" "storage_account" {
-  name                     = "storageaccountname"
+  name                     = var.storage_account_name
   resource_group_name      = azurerm_resource_group.app_grp
   location                 = azurerm_resource_group.app_grp.location
   account_tier             = "Standard"
@@ -18,14 +18,17 @@ resource "azurerm_storage_account" "storage_account" {
 # Container
 resource "azurerm_storage_container" "data" {
   name                  = "data"
-  storage_account_name  = azurerm_storage_account.storage_account.name
+  storage_account_name  = var.storage_account_name
   container_access_type = "blob"
+  depends_on = [
+    azurerm_storage_account.storage_account
+  ]
 }
 
 # Blob
 resource "azurerm_storage_blob" "sample" {
   name                   = "sample.txt"
-  storage_account_name   = azurerm_storage_account.storage_account.name
+  storage_account_name   = var.storage_account_name
   storage_container_name = azurerm_storage_container.data.name
   type                   = "Block"
   source                 = "sample.txt"
