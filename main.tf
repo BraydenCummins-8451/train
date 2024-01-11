@@ -19,16 +19,19 @@ resource "azurerm_storage_account" "storage_account" {
 resource "azurerm_storage_container" "data" {
   name                  = "data"
   storage_account_name  = azurerm_storage_account.storage_account.name
-  container_access_type = "private"
+  container_access_type = "blob"
 }
 
 # Blob
-resource "azurerm_storage_blob" "example" {
-  name                   = "my-awesome-content.zip"
-  storage_account_name   = azurerm_storage_account.example.name
-  storage_container_name = azurerm_storage_container.example.name
+resource "azurerm_storage_blob" "sample" {
+  name                   = "sample.txt"
+  storage_account_name   = azurerm_storage_account.storage_account.name
+  storage_container_name = azurerm_storage_container.data.name
   type                   = "Block"
-  source                 = "some-local-file.zip"
+  source                 = "sample.txt"
+  depends_on = [
+    azurerm_storage_container.data
+  ]
 }
 
 #
