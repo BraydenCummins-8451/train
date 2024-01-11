@@ -3,6 +3,14 @@ locals {
   resource_group = "app-grp"
   location = "East US"
 }
+
+# Data block to capture the subnet information
+data "azurerm_subnet" "SubnetA" {
+  name                 = "SubnetA"
+  virtual_network_name = azurerm_virtual_network.app_network.name
+  resource_group_name  = azurerm_resource_group.app_grp.name
+}
+
 # Resource group - used to represent the infrastructure that you want to deploy
 # Contains resource type and name
 resource "azurerm_resource_group" "app_grp" {
@@ -57,6 +65,50 @@ resource "azurerm_virtual_network" "app_network" {
     name           = "SubnetA"
     address_prefix = "10.0.1.0/24"
   }
+}
+
+# Virtual Machine
+resource "azurerm_network_interface" "app_interface" {
+  name                = "app-interface"
+  location            = azurerm_resource_group.app_grp.location
+  resource_group_name = azurerm_resource_group.app_grp.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = data.azurerm_subnet.SubnetA.id
+    private_ip_address_allocation = "Dynamic"
+  }
+  depends_on = [
+    azurerm_virtual_network.app_network
+  ]
+}
+
+resource "azurerm_windows_virtual_machine" "app_vm" {
+  name                = "appvm"
+  resource_group_name = azurerm_resource_group.app_grp.name
+  location            = azurerm_resource_group.app_grp.location
+  size                = "Standard_D2s_v3"
+  admin_username      = "admin"
+  admin_password      = "P@$$w0rd1234!"
+  network_interface_ids = [
+    azurerm_network_interface.app_interface.id
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2024-Datacenter"
+    version   = "latest"
+  }
+
+  depends_on = [
+    azurerm_network_interface.app_interface
+  ]
 }
 
 
