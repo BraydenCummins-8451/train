@@ -1,18 +1,26 @@
+# Local variable - used when you reuse declared values
+locals {
+  resource_group = "app-grp"
+  location = "East US"
+}
 # Resource group - used to represent the infrastructure that you want to deploy
 # Contains resource type and name
 resource "azurerm_resource_group" "app_grp" {
-  name = "app-grp"
-  location = "East US"
+  name = local.resource_group
+  location = local.location
 }
 
 # Example resource - This is a storage account
 resource "azurerm_storage_account" "storage_account" {
   name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.app_grp
-  location                 = azurerm_resource_group.app_grp.location
+  resource_group_name      = local.resource_group
+  location                 = local.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
   allow_blob_public_access = true
+  depends_on = [
+    azurerm_resource_group.app_grp
+  ]
 }
 
 # Container
@@ -37,4 +45,19 @@ resource "azurerm_storage_blob" "sample" {
   ]
 }
 
-#
+# Virtual Network
+resource "azurerm_virtual_network" "app_network" {
+  name                = "app-network"
+  location            = local.location
+  resource_group_name = azurerm_resource_group.app_grp.name
+  address_space       = ["10.0.0.0/16"]
+  # dns_servers         = ["10.0.0.4", "10.0.0.5"] - using azure dns servers
+
+  subnet {
+    name           = "SubnetA"
+    address_prefix = "10.0.1.0/24"
+  }
+}
+
+
+
